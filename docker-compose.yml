@@ -1,0 +1,34 @@
+version: '3'
+services:
+    app:
+        build: .
+        image: laravel-app:latest
+#        volumes:
+#            - .:/var/www
+#            - ./public:/var/www/html
+        ports:
+            - 8080:80
+    cron:
+        image: laravel-app:latest
+#        volumes:
+#            - .:/var/www
+#            - ./public:/var/www/html
+        command: ["/usr/bin/supervisord", "-n", "-c",  "/etc/supervisord.conf"]
+        environment:
+            - SUPER_CMD=/usr/bin/entrypoint.sh
+#    worker1:
+#        image: laravel-app:latest
+##        volumes:
+##            - .:/var/www
+##            - ./public:/var/www/html
+#        command: ["/usr/bin/supervisord", "-n", "-c",  "/etc/supervisord.conf"]
+#        environment:
+#            - SUPER_CMD=php /var/www/artisan queue:work --queue=worker1 --sleep=5 --tries=1 --daemon
+#    worker2:
+#        image: laravel-app:latest
+#        #        volumes:
+#        #            - .:/var/www
+#        #            - ./public:/var/www/html
+#        command: ["/usr/bin/supervisord", "-n", "-c",  "/etc/supervisord.conf"]
+#        environment:
+#        - SUPER_CMD=php /var/www/artisan queue:work --queue=worker2 --sleep=5 --tries=1 --daemon
