@@ -1,0 +1,40 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+      # Copy "RepositoryURI" from output of CloudFormation Stack "laravel-ecr"
+      #- REPOSITORY_URI=347103861163.dkr.ecr.us-east-1.amazonaws.com/laravel-demo
+      #- IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - printenv
+      - echo -n "$CODEBUILD_LOG_PATH" > /tmp/build_id.out
+      - printf "%s:%s" "$REPOSITORY_URI" "$(cat /tmp/build_id.out)" > /tmp/build_tag.out
+      - printf '{"tag":"%s"}' "$(cat /tmp/build_id.out)" > /tmp/build.json
+      #- echo Retrieve app config from Amazon S3...
+      # This file is copied to S3 using the "docker/push-config-s3.sh" script
+      # Adjust S3 bucket name and path as necessary
+      #- aws s3 cp s3://codepipeline-us-east-1-347103861163/laravel-demo/Config/.env .env
+      #- echo APP_VERSION=$CODEBUILD_RESOLVED_SOURCE_VERSION >> .env
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...          
+      #- docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+      #- docker tag $REPOSITORY_URI:$IMAGE_TAG $REPOSITORY_URI:latest
+      - docker build --tag "$(cat /tmp/build_tag.out)" .
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      #- docker push $REPOSITORY_URI:$IMAGE_TAG
+      #- docker push $REPOSITORY_URI:latest
+      - docker push "$(cat /tmp/build_tag.out)"
+      #- echo Writing image definitions...
+      #- printf '[{"name":"laravel_app","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > image_definitions-laravel_app.json
+      #- printf '[{"name":"laravel_cron","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > image_definitions-laravel_cron.json
+artifacts:
+    files: /tmp/build.json
+    discard-paths: yes
